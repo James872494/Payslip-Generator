@@ -1,13 +1,3 @@
-'''from dotenv import load_dotenv
-import os
-
-load_dotenv()
-
-print("SMTP Server:", os.getenv("SMTP_SERVER"))
-print("SMTP Port:", os.getenv("SMTP_PORT"))
-print("Sender Email:", os.getenv("SENDER_EMAIL"))
-print("Sender Password:", os.getenv("SENDER_PASSWORD"))  # 🔒 Only for testing'''
-
 import os
 import pandas as pd
 from fpdf import FPDF
