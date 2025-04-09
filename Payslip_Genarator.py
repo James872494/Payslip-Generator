@@ -1,3 +1,13 @@
+'''from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+print("SMTP Server:", os.getenv("SMTP_SERVER"))
+print("SMTP Port:", os.getenv("SMTP_PORT"))
+print("Sender Email:", os.getenv("SENDER_EMAIL"))
+print("Sender Password:", os.getenv("SENDER_PASSWORD"))  # 🔒 Only for testing'''
+
 import os
 import pandas as pd
 from fpdf import FPDF
@@ -10,10 +20,10 @@ from dotenv import load_dotenv
 # 🚀 Load environment variables (SMTP config)
 load_dotenv()
 
-SMTP_SERVER = os.getenv("SMTP_SERVER")
+SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
-SENDER_EMAIL = os.getenv("SENDER_EMAIL")
-SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")
+GMAIL_USER = os.getenv("GMAIL_USER", "jamesmutembedza87@gmail.com")  # ✅ Your Gmail
+GMAIL_PASS = os.getenv("GMAIL_PASS", "pyllmkgxvffvobba")              # ✅ App password
 
 # 📁 Create output folder for payslips
 output_dir = "payslips"
@@ -53,25 +63,29 @@ def generate_payslip(row):
 
 # ✉️ Send email with attachment
 def send_email(to_email, name, attachment_path):
-    msg = MIMEMultipart()
-    msg['From'] = SENDER_EMAIL
-    msg['To'] = to_email
-    msg['Subject'] = "Your Payslip for This Month"
-
-    body = f"Dear {name},\n\nPlease find attached your payslip for this month.\n\nBest regards,\nHR Department"
-    msg.attach(MIMEText(body, 'plain'))
-
-    with open(attachment_path, "rb") as file:
-        part = MIMEApplication(file.read(), Name=os.path.basename(attachment_path))
-        part['Content-Disposition'] = f'attachment; filename="{os.path.basename(attachment_path)}"'
-        msg.attach(part)
-
     try:
+        msg = MIMEMultipart()
+        msg['From'] = GMAIL_USER
+        msg['To'] = to_email
+        msg['Subject'] = "Your Payslip for This Month"
+
+        body = f"Dear {name},\n\nPlease find attached your payslip for this month.\n\nBest regards,\nHR Department"
+        msg.attach(MIMEText(body, 'plain'))
+
+        with open(attachment_path, "rb") as file:
+            part = MIMEApplication(file.read(), Name=os.path.basename(attachment_path))
+            part['Content-Disposition'] = f'attachment; filename="{os.path.basename(attachment_path)}"'
+            msg.attach(part)
+
+        # ✅ Send email
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.set_debuglevel(1)
             server.starttls()
-            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.login(GMAIL_USER, GMAIL_PASS)
             server.send_message(msg)
+
         print(f"✅ Payslip sent to {name} at {to_email}")
+
     except Exception as e:
         print(f"❌ Failed to send email to {to_email}: {e}")
 
@@ -88,3 +102,4 @@ for index, row in df.iterrows():
         print(f"❌ Error processing employee ID {row['EMPLOYEE ID']}: {e}")
 
 print("🏁 All payslips processed.")
+
