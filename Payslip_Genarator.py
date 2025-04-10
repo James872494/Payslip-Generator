@@ -1,13 +1,3 @@
-'''from dotenv import load_dotenv
-import os
-
-load_dotenv()
-
-print("SMTP Server:", os.getenv("SMTP_SERVER"))
-print("SMTP Port:", os.getenv("SMTP_PORT"))
-print("Sender Email:", os.getenv("SENDER_EMAIL"))
-print("Sender Password:", os.getenv("SENDER_PASSWORD"))  # 🔒 Only for testing'''
-
 import os
 import pandas as pd
 from fpdf import FPDF
@@ -36,30 +26,63 @@ except FileNotFoundError:
     print("❌ Error: employees.xlsx not found.")
     exit(1)
 
-# 🧾 Generate payslip PDF
+
 def generate_payslip(row):
     net_salary = row["BASIC SALARY"] + row["ALLOWENCES"] - row["DEDUCTIONS"]
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", size=12)
+    pdf.set_auto_page_break(auto=True, margin=15)
 
-    # Header
-    pdf.set_font("Arial", "B", 16)
-    pdf.cell(200, 10, txt="Employee Payslip", ln=True, align='C')
+    # 🔷 Header Section
+    pdf.set_fill_color(0, 102, 204)  # Blue background
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Arial", "B", 20)
+    pdf.cell(0, 15, "  Employee Payslip", ln=True, fill=True)
+
+    # 🧾 Employee Details
     pdf.ln(10)
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_font("Arial", "B", 14)
+    pdf.cell(0, 10, "Employee Information", ln=True)
+    pdf.set_font("Arial", "", 12)
+    pdf.cell(0, 8, f"Employee ID: {row['EMPLOYEE ID']}", ln=True)
+    pdf.cell(0, 8, f"Name: {row['NAME']}", ln=True)
+    pdf.cell(0, 8, f"Email: {row['EMAIL']}", ln=True)
 
-    # Info
-    pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt=f"Employee ID: {row['EMPLOYEE ID']}", ln=True)
-    pdf.cell(200, 10, txt=f"Name: {row['NAME']}", ln=True)
-    pdf.cell(200, 10, txt=f"Basic Salary: ${row['BASIC SALARY']:.2f}", ln=True)
-    pdf.cell(200, 10, txt=f"Allowances: ${row['ALLOWENCES']:.2f}", ln=True)
-    pdf.cell(200, 10, txt=f"Deductions: ${row['DEDUCTIONS']:.2f}", ln=True)
-    pdf.cell(200, 10, txt=f"Net Salary: ${net_salary:.2f}", ln=True)
+    # 💰 Salary Breakdown
+    pdf.ln(10)
+    pdf.set_font("Arial", "B", 14)
+    pdf.cell(0, 10, "Salary Breakdown", ln=True)
+    pdf.set_font("Arial", "", 12)
 
+    def draw_row(label, amount, fill=False):
+        pdf.set_fill_color(245, 245, 245)  # Light gray
+        pdf.cell(90, 10, label, border=1, fill=fill)
+        pdf.cell(90, 10, f"${amount:.2f}", border=1, ln=True, fill=fill)
+
+    draw_row("Basic Salary", row["BASIC SALARY"], fill=True)
+    draw_row("Allowances", row["ALLOWENCES"])
+    draw_row("Deductions", row["DEDUCTIONS"], fill=True)
+
+    # 🧮 Net Salary
+    pdf.set_font("Arial", "B", 12)
+    pdf.ln(5)
+    pdf.set_fill_color(204, 255, 204)  # Green fill
+    pdf.cell(90, 10, "Net Salary", border=1, fill=True)
+    pdf.cell(90, 10, f"${net_salary:.2f}", border=1, ln=True, fill=True)
+
+    # 📝 Footer
+    pdf.ln(15)
+    pdf.set_font("Arial", "I", 10)
+    pdf.set_text_color(100, 100, 100)
+    pdf.multi_cell(0, 8, "Note: This payslip is system-generated and does not require a signature.\nIf you have any questions, please contact HR.")
+    pdf.set_text_color(0, 0, 0)
+
+    # 💾 Save PDF
     filename = os.path.join(output_dir, f"{row['EMPLOYEE ID']}.pdf")
     pdf.output(filename)
     return filename
+
 
 # ✉️ Send email with attachment
 def send_email(to_email, name, attachment_path):
